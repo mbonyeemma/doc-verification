@@ -558,14 +558,16 @@ body {
   flex-direction: column;
   padding-top: 80px; /* Account for fixed header */
   height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height for mobile */
   overflow: hidden;
 }
 
 .step-header {
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 1rem;
   background: rgba(0,0,0,0.8);
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
 }
 
 .step-indicator {
@@ -607,12 +609,30 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  /* Prevent layout shift when camera loads */
+  contain: layout style paint;
 }
 
 .camera-feed {
   width: 100%;
   height: 100%;
+  max-height: 100%;
   object-fit: cover;
+  flex: 1;
+  /* Prevent layout shift when camera initializes */
+  contain: layout style paint;
+}
+
+/* Webcam element specific styles */
+video {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  flex: 1 !important;
 }
 
 /* Overlays - Much larger and mobile-optimized */
@@ -794,14 +814,15 @@ body {
 .instruction-panel {
   background: rgba(0,0,0,0.9);
   backdrop-filter: blur(10px);
-  padding: 2rem 1rem;
+  padding: 1rem;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .instruction-text {
   font-size: 1.1rem;
   color: #fff;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   line-height: 1.5;
 }
 
@@ -944,6 +965,7 @@ body {
   .step-content {
     padding-top: 70px;
     height: 100vh;
+    height: 100dvh;
   }
   
   .step-title {
@@ -1067,10 +1089,12 @@ body {
   
   .step-content {
     height: 100vh;
+    height: 100dvh;
   }
   
   .camera-container {
-    height: calc(100vh - 200px);
+    flex: 1;
+    min-height: 0;
   }
   
   .id-frame {
@@ -1092,7 +1116,7 @@ body {
   }
   
   .instruction-panel {
-    padding: 1.5rem 1rem;
+    padding: 1rem;
   }
   
   .instruction-text {
