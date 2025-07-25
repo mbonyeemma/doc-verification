@@ -273,9 +273,7 @@ const App: React.FC = () => {
     // Use higher quality settings
     const imageSrc = webcamRef.current.getScreenshot({
       width: 1920,
-      height: 1080,
-      type: 'image/jpeg',
-      quality: 0.95
+      height: 1080
     });
     if (!imageSrc) return;
     
@@ -722,6 +720,7 @@ const App: React.FC = () => {
             ref={webcamRef}
             className="camera-feed"
             screenshotFormat="image/jpeg"
+            screenshotQuality={0.95}
             videoConstraints={{
               facingMode: 'environment',
               width: { ideal: 1920 },
