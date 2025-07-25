@@ -62,7 +62,7 @@ const App: React.FC = () => {
   const [captureCountdown, setCaptureCountdown] = useState<number>(0);
   const [imageQuality, setImageQuality] = useState<number>(0);
   const webcamRef = useRef<Webcam>(null);
-  const autoCaptureInterval = useRef<number | null>(null);
+  const autoCaptureInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Check if mobile and HTTPS on mount
   useEffect(() => {
