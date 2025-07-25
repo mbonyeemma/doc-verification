@@ -61,6 +61,8 @@ const App: React.FC = () => {
   const [autoCapture, setAutoCapture] = useState<boolean>(false);
   const [captureCountdown, setCaptureCountdown] = useState<number>(0);
   const [imageQuality, setImageQuality] = useState<number>(0);
+  const [showReview, setShowReview] = useState<boolean>(false);
+  const [capturedImageSrc, setCapturedImageSrc] = useState<string>('');
   const webcamRef = useRef<Webcam>(null);
   const autoCaptureInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -268,12 +270,22 @@ const App: React.FC = () => {
   const handleCapture = async () => {
     if (!webcamRef.current) return;
     
-    const imageSrc = webcamRef.current.getScreenshot();
+    // Use higher quality settings
+    const imageSrc = webcamRef.current.getScreenshot({
+      width: 1920,
+      height: 1080,
+      type: 'image/jpeg',
+      quality: 0.95
+    });
     if (!imageSrc) return;
     
     // Analyze image quality
     const quality = await analyzeImageQuality(imageSrc);
     setImageQuality(quality);
+    
+    // Store the image source for review
+    setCapturedImageSrc(imageSrc);
+    setShowReview(true);
     
     // Convert base64 to blob
     const response = await fetch(imageSrc);
@@ -301,17 +313,6 @@ const App: React.FC = () => {
       ...prev,
       [imageKey]: blob
     }));
-    
-    // Auto-advance if quality is good enough
-    if (quality > 70) {
-      setTimeout(() => {
-        if (currentStep < steps.length - 1) {
-          setCurrentStep(currentStep + 1);
-        } else {
-          submitVerification();
-        }
-      }, 1000);
-    }
   };
 
   const submitVerification = async () => {
@@ -361,6 +362,10 @@ const App: React.FC = () => {
   };
 
   const retakePhoto = () => {
+    setShowReview(false);
+    setCapturedImageSrc('');
+    setImageQuality(0);
+    
     const steps = getSteps();
     const currentStepData = steps[currentStep];
     
@@ -383,8 +388,19 @@ const App: React.FC = () => {
       ...prev,
       [imageKey]: null
     }));
-    
+  };
+
+  const confirmPhoto = () => {
+    setShowReview(false);
+    setCapturedImageSrc('');
     setImageQuality(0);
+    
+    const steps = getSteps();
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      submitVerification();
+    }
   };
 
   const resetVerification = () => {
@@ -615,6 +631,71 @@ const App: React.FC = () => {
     </div>
   );
 
+  const renderReviewScreen = () => {
+    const steps = getSteps();
+    const currentStepData = steps[currentStep];
+    
+    if (!currentStepData) return null;
+    
+    return (
+      <div className="step-content">
+        <div className="step-header">
+          <div className="step-indicator">
+            <span className="step-number">{currentStep + 1}</span>
+            <span className="step-total">/ {steps.length}</span>
+          </div>
+          <h2 className="step-title">Review Photo</h2>
+          <p className="step-description">Check if the photo is clear and complete</p>
+        </div>
+        
+        <div className="review-container">
+          <img 
+            src={capturedImageSrc} 
+            alt="Captured photo" 
+            className="review-image"
+          />
+          
+          {imageQuality > 0 && (
+            <div className="quality-indicator review-quality">
+              <div className="quality-bar">
+                <div 
+                  className="quality-fill" 
+                  style={{ width: `${imageQuality}%` }}
+                ></div>
+              </div>
+              <span className="quality-text">
+                Quality: {Math.round(imageQuality)}%
+              </span>
+            </div>
+          )}
+        </div>
+        
+        <div className="instruction-panel">
+          <p className="instruction-text">
+            {imageQuality > 70 ? 'Great quality! Photo looks good.' : 'Photo quality could be better. Consider retaking.'}
+          </p>
+          
+          <div className="action-buttons">
+            <button 
+              className="btn btn-primary" 
+              onClick={confirmPhoto}
+              disabled={isProcessing}
+            >
+              {currentStep < steps.length - 1 ? 'Next' : 'Submit'}
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              onClick={retakePhoto}
+              disabled={isProcessing}
+            >
+              Retake
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderStepContent = () => {
     const steps = getSteps();
     const currentStepData = steps[currentStep];
@@ -679,47 +760,20 @@ const App: React.FC = () => {
           <p className="instruction-text">{currentStepData.instruction}</p>
           
           <div className="action-buttons">
-            {!hasImage ? (
-              <>
-                <button 
-                  className="btn btn-primary" 
-                  onClick={handleCapture}
-                  disabled={isProcessing}
-                >
-                  Capture Photo
-                </button>
-                <button 
-                  className="btn btn-secondary" 
-                  onClick={startAutoCapture}
-                  disabled={isProcessing || autoCapture}
-                >
-                  Auto Capture
-                </button>
-              </>
-            ) : (
-              <>
-                <button 
-                  className="btn btn-primary" 
-                  onClick={() => {
-                    if (currentStep < steps.length - 1) {
-                      setCurrentStep(currentStep + 1);
-                    } else {
-                      submitVerification();
-                    }
-                  }}
-                  disabled={isProcessing}
-                >
-                  {currentStep < steps.length - 1 ? 'Next' : 'Submit'}
-                </button>
-                <button 
-                  className="btn btn-secondary" 
-                  onClick={retakePhoto}
-                  disabled={isProcessing}
-                >
-                  Retake
-                </button>
-              </>
-            )}
+            <button 
+              className="btn btn-primary" 
+              onClick={handleCapture}
+              disabled={isProcessing}
+            >
+              Capture Photo
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              onClick={startAutoCapture}
+              disabled={isProcessing || autoCapture}
+            >
+              Auto Capture
+            </button>
           </div>
         </div>
       </div>
@@ -779,7 +833,7 @@ const App: React.FC = () => {
         </div>
       </div>
       
-      {renderStepContent()}
+      {showReview ? renderReviewScreen() : renderStepContent()}
       
       {error && (
         <div className="error-message">
