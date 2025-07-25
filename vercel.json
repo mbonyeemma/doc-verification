@@ -1,11 +1,10 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "server/src/server.ts",
-      "use": "@vercel/node"
+  "functions": {
+    "server/src/server.ts": {
+      "maxDuration": 30
     }
-  ],
+  },
   "routes": [
     {
       "src": "/verify",
@@ -15,10 +14,5 @@
       "src": "/(.*)",
       "dest": "server/src/server.ts"
     }
-  ],
-  "functions": {
-    "server/src/server.ts": {
-      "maxDuration": 30
-    }
-  }
+  ]
 } 
