@@ -270,12 +270,52 @@ const App: React.FC = () => {
   const handleCapture = async () => {
     if (!webcamRef.current) return;
     
-    // Use higher quality settings
-    const imageSrc = webcamRef.current.getScreenshot({
-      width: 1920,
-      height: 1080
-    });
-    if (!imageSrc) return;
+    // Get the current video element to ensure we capture what's actually displayed
+    const video = webcamRef.current.video;
+    if (!video) return;
+    
+    // Create a canvas to capture exactly what's in the view
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Set canvas size to match video display size
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw the video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Get the image data
+    let imageSrc = canvas.toDataURL('image/jpeg', 0.95);
+    
+    // Auto-rotate selfies if needed
+    const steps = getSteps();
+    const currentStepData = steps[currentStep];
+    
+    if (currentStepData && (currentStepData.overlay === 'face' || currentStepData.overlay === 'liveness')) {
+      // For selfies, we might need to auto-rotate based on device orientation
+      const orientation = window.orientation || 0;
+      if (orientation !== 0) {
+        // Create a new canvas for rotation
+        const rotatedCanvas = document.createElement('canvas');
+        const rotatedCtx = rotatedCanvas.getContext('2d');
+        if (rotatedCtx) {
+          const angle = orientation === 90 ? Math.PI / 2 : orientation === -90 ? -Math.PI / 2 : 0;
+          
+          if (angle !== 0) {
+            rotatedCanvas.width = canvas.height;
+            rotatedCanvas.height = canvas.width;
+            
+            rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
+            rotatedCtx.rotate(angle);
+            rotatedCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+            
+            imageSrc = rotatedCanvas.toDataURL('image/jpeg', 0.95);
+          }
+        }
+      }
+    }
     
     // Analyze image quality
     const quality = await analyzeImageQuality(imageSrc);
@@ -288,9 +328,6 @@ const App: React.FC = () => {
     // Convert base64 to blob
     const response = await fetch(imageSrc);
     const blob = await response.blob();
-    
-    const steps = getSteps();
-    const currentStepData = steps[currentStep];
     
     if (!currentStepData) return;
     
@@ -723,8 +760,12 @@ const App: React.FC = () => {
             screenshotQuality={0.95}
             videoConstraints={{
               facingMode: 'environment',
-              width: { ideal: 1920 },
-              height: { ideal: 1080 }
+              width: { ideal: 1920, min: 1280 },
+              height: { ideal: 1080, min: 720 },
+              aspectRatio: { ideal: 16/9 },
+              focusMode: 'continuous',
+              exposureMode: 'continuous',
+              whiteBalanceMode: 'continuous'
             }}
             onUserMedia={() => console.log('Camera started')}
             onUserMediaError={(err) => {

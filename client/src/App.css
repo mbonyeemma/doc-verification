@@ -747,8 +747,8 @@ video {
 }
 
 .face-oval {
-  width: 60%;
-  height: 80%;
+  width: 90%;
+  height: 90%;
   border: 3px solid #4ade80;
   border-radius: 50%;
   position: relative;
@@ -757,8 +757,9 @@ video {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Make it more vertical/portrait oriented */
-  aspect-ratio: 0.75 / 1;
+  /* Make it oval/portrait oriented */
+  aspect-ratio: 0.8 / 1;
+  transform: scaleY(1.2);
 }
 
 .face-guide-text {
@@ -1046,9 +1047,10 @@ video {
   }
   
   .face-oval {
-    width: 65%;
-    height: 85%;
-    aspect-ratio: 0.75 / 1;
+    width: 90%;
+    height: 90%;
+    aspect-ratio: 0.8 / 1;
+    transform: scaleY(1.2);
   }
   
   .id-guide-text,
@@ -1158,9 +1160,10 @@ video {
   }
   
   .face-oval {
-    width: 70%;
+    width: 90%;
     height: 90%;
-    aspect-ratio: 0.75 / 1;
+    aspect-ratio: 0.8 / 1;
+    transform: scaleY(1.2);
   }
   
   .id-guide-text,
