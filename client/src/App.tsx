@@ -762,10 +762,7 @@ const App: React.FC = () => {
               facingMode: 'environment',
               width: { ideal: 1920, min: 1280 },
               height: { ideal: 1080, min: 720 },
-              aspectRatio: { ideal: 16/9 },
-              focusMode: 'continuous',
-              exposureMode: 'continuous',
-              whiteBalanceMode: 'continuous'
+              aspectRatio: { ideal: 16/9 }
             }}
             onUserMedia={() => console.log('Camera started')}
             onUserMediaError={(err) => {
