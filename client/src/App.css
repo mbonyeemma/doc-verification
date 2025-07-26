@@ -640,6 +640,8 @@ body {
   flex: 1;
   /* Prevent layout shift when camera initializes */
   contain: layout style paint;
+  /* Improve camera quality */
+  filter: brightness(1.1) contrast(1.1) saturate(1.1);
 }
 
 /* Webcam element specific styles */

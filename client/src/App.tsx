@@ -274,6 +274,12 @@ const App: React.FC = () => {
     const video = webcamRef.current.video;
     if (!video) return;
     
+    // Get the camera container to calculate overlay position
+    const cameraContainer = document.querySelector('.camera-container');
+    const overlayElement = document.querySelector('.id-frame, .face-oval');
+    
+    if (!cameraContainer || !overlayElement) return;
+    
     // Create a canvas to capture exactly what's in the view
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -286,8 +292,38 @@ const App: React.FC = () => {
     // Draw the video frame to canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // Get the image data
-    let imageSrc = canvas.toDataURL('image/jpeg', 0.95);
+    // Calculate the overlay position relative to the video
+    const containerRect = cameraContainer.getBoundingClientRect();
+    const overlayRect = overlayElement.getBoundingClientRect();
+    const videoRect = video.getBoundingClientRect();
+    
+    // Calculate the crop area (overlay position within the video)
+    const scaleX = video.videoWidth / videoRect.width;
+    const scaleY = video.videoHeight / videoRect.height;
+    
+    const cropX = (overlayRect.left - videoRect.left) * scaleX;
+    const cropY = (overlayRect.top - videoRect.top) * scaleY;
+    const cropWidth = overlayRect.width * scaleX;
+    const cropHeight = overlayRect.height * scaleY;
+    
+    // Create a new canvas for the cropped image
+    const croppedCanvas = document.createElement('canvas');
+    const croppedCtx = croppedCanvas.getContext('2d');
+    if (!croppedCtx) return;
+    
+    // Set the cropped canvas size to the overlay size
+    croppedCanvas.width = cropWidth;
+    croppedCanvas.height = cropHeight;
+    
+    // Draw only the cropped area
+    croppedCtx.drawImage(
+      canvas,
+      cropX, cropY, cropWidth, cropHeight,  // Source rectangle
+      0, 0, cropWidth, cropHeight           // Destination rectangle
+    );
+    
+    // Get the cropped image data
+    let imageSrc = croppedCanvas.toDataURL('image/jpeg', 0.95);
     
     // Auto-rotate selfies if needed
     const steps = getSteps();
@@ -304,12 +340,12 @@ const App: React.FC = () => {
           const angle = orientation === 90 ? Math.PI / 2 : orientation === -90 ? -Math.PI / 2 : 0;
           
           if (angle !== 0) {
-            rotatedCanvas.width = canvas.height;
-            rotatedCanvas.height = canvas.width;
+            rotatedCanvas.width = croppedCanvas.height;
+            rotatedCanvas.height = croppedCanvas.width;
             
             rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
             rotatedCtx.rotate(angle);
-            rotatedCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+            rotatedCtx.drawImage(croppedCanvas, -croppedCanvas.width / 2, -croppedCanvas.height / 2);
             
             imageSrc = rotatedCanvas.toDataURL('image/jpeg', 0.95);
           }
@@ -762,7 +798,8 @@ const App: React.FC = () => {
               facingMode: 'environment',
               width: { ideal: 1920, min: 1280 },
               height: { ideal: 1080, min: 720 },
-              aspectRatio: { ideal: 16/9 }
+              aspectRatio: { ideal: 16/9 },
+              frameRate: { ideal: 30, min: 24 }
             }}
             onUserMedia={() => console.log('Camera started')}
             onUserMediaError={(err) => {
